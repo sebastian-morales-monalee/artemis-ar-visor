@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Panel Solar AR - EBRIWER</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="icon" href="https://www.ebriwer.com/favicon32px.png" type="image/png">
+
+  <script src="https://unpkg.com/three@0.126.0/build/three.js"></script>
+  <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      touch-action: none;
+      background: #140f24;
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      position: absolute;
+      z-index: 2;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      color: #fff;
+      background: rgba(72, 35, 122, 0.84);
+    }
+
+    #launch-panel {
+      position: absolute;
+      top: max(20px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: min(92vw, 420px);
+      transform: translateX(-50%);
+      padding: 18px 18px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 24px;
+      background: rgba(31, 16, 54, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 16px 40px rgba(10, 6, 20, 0.35);
+    }
+
+    #launch-brand-image {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.25));
+    }
+
+    #start-button {
+      position: static;
+      width: 100%;
+      max-width: 320px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(135deg, rgba(130, 64, 194, 0.96), rgba(80, 35, 142, 0.96));
+      box-shadow: 0 10px 24px rgba(45, 18, 82, 0.32);
+    }
+
+    #top-right-bar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 2;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #exit-button {
+      position: static;
+      display: none;
+      background: rgba(120, 58, 180, 0.92);
+    }
+
+    #brand-title {
+      position: static;
+      padding: 10px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      background: rgba(61, 27, 109, 0.9);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 16px rgba(40, 15, 72, 0.3);
+    }
+
+    #height-controls {
+      position: absolute;
+      top: 50%;
+      right: max(16px, env(safe-area-inset-right));
+      z-index: 2;
+      display: none;
+      transform: translateY(-50%);
+      flex-direction: column;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(84, 42, 138, 0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(40, 15, 72, 0.28);
+    }
+
+    #rotation-controls {
+      position: absolute;
+      top: 50%;
+      left: max(16px, env(safe-area-inset-left));
+      z-index: 2;
+      display: none;
+      transform: translateY(-50%);
+      flex-direction: column;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(84, 42, 138, 0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(40, 15, 72, 0.28);
+    }
+
+    #translation-controls {
+      position: absolute;
+      left: max(16px, env(safe-area-inset-left));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 2;
+      display: none;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(3, 64px);
+      gap: 8px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(84, 42, 138, 0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(40, 15, 72, 0.28);
+    }
+
+    #dim-controls {
+      position: absolute;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 2;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(84, 42, 138, 0.34);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(40, 15, 72, 0.28);
+    }
+
+    #dim-factor-readout {
+      min-width: 90px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(61, 27, 109, 0.9);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 6px 16px rgba(40, 15, 72, 0.3);
+    }
+
+    .height-button {
+      position: static;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      min-height: 72px;
+      padding: 8px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      background: rgba(61, 27, 109, 0.9);
+      box-shadow: 0 6px 16px rgba(40, 15, 72, 0.3);
+      touch-action: manipulation;
+    }
+
+    .height-button-arrow {
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 700;
+    }
+
+    .height-button-label {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .height-button:active {
+      transform: scale(0.97);
+    }
+
+    @media (max-width: 480px) {
+      #launch-panel {
+        top: max(12px, env(safe-area-inset-top));
+        width: min(94vw, 360px);
+        gap: 12px;
+        padding: 14px 14px 16px;
+        border-radius: 20px;
+      }
+
+      #start-button {
+        max-width: none;
+        font-size: 15px;
+      }
+
+      #height-controls {
+        right: max(10px, env(safe-area-inset-right));
+        padding: 8px;
+        gap: 10px;
+      }
+
+      #rotation-controls {
+        left: max(10px, env(safe-area-inset-left));
+        padding: 8px;
+        gap: 10px;
+      }
+
+      #translation-controls {
+        left: max(10px, env(safe-area-inset-left));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        grid-template-columns: repeat(3, 56px);
+        grid-template-rows: repeat(3, 56px);
+        gap: 6px;
+        padding: 8px;
+      }
+
+      #dim-controls {
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        padding: 8px;
+        gap: 8px;
+      }
+
+      #top-right-bar {
+        top: 12px;
+        right: 10px;
+        gap: 8px;
+      }
+
+      #brand-title {
+        font-size: 12px;
+        padding: 8px 14px;
+      }
+
+      .height-button {
+        width: 64px;
+        min-height: 64px;
+      }
+
+      .height-button-arrow {
+        font-size: 24px;
+      }
+
+      .height-button-label {
+        font-size: 11px;
+      }
+    }
+
+    #status-text {
+      position: static;
+      z-index: 2;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 14px;
+      border-radius: 6px;
+      background: rgba(56, 26, 102, 0.7);
+      color: #fff;
+      font-size: 14px;
+      font-family: monospace;
+      text-align: center;
+    }
+
+    #hello-popup {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(20, 15, 36, 0.42);
+    }
+
+    #hello-popup.is-visible {
+      display: flex;
+    }
+
+    #hello-popup-card {
+      min-width: min(280px, calc(100vw - 40px));
+      padding: 20px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 18px;
+      background: rgba(61, 27, 109, 0.96);
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(40, 15, 72, 0.35);
+    }
+
+    #hello-popup-title {
+      margin: 0 0 16px;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    #hello-popup-close {
+      position: static;
+      min-width: 120px;
+      background: rgba(120, 58, 180, 0.92);
+    }
+
+    #device-rotation-readout {
+      position: absolute;
+      top: 118px;
+      left: 20px;
+      z-index: 2;
+      display: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      background: rgba(56, 26, 102, 0.78);
+      color: #fff;
+      font-size: 13px;
+      font-family: monospace;
+      white-space: pre-line;
+      pointer-events: none;
+    }
+
+    #device-rotation-readout.is-visible {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="launch-panel">
+    <img
+      id="launch-brand-image"
+      src="artemis_ar_visor_beta1_web_optimized.jpg"
+      alt="Artemis AR Visor Beta 1.0"
+    >
+    <button id="start-button">Launch AR Solar Visor</button>
+    <div id="status-text">Waiting for AR start...</div>
+  </div>
+  <div id="top-right-bar">
+    <div id="brand-title">Artemis AR Visor - Beta 1.0</div>
+    <button id="exit-button">Close AR</button>
+  </div>
+  <div id="rotation-controls">
+    <button id="rotate-clockwise-button" class="height-button" type="button" aria-label="Rotate set clockwise">
+      <span class="height-button-arrow">&#8635;</span>
+      <span class="height-button-label">Rotate +</span>
+    </button>
+    <button id="rotate-counterclockwise-button" class="height-button" type="button" aria-label="Rotate set counterclockwise">
+      <span class="height-button-arrow">&#8634;</span>
+      <span class="height-button-label">Rotate -</span>
+    </button>
+  </div>
+  <div id="translation-controls">
+    <div></div>
+    <button id="move-forward-button" class="height-button" type="button" aria-label="Move forward">
+      <span class="height-button-arrow">&#8593;</span>
+      <span class="height-button-label">Forward</span>
+    </button>
+    <div></div>
+    <button id="move-left-button" class="height-button" type="button" aria-label="Move left">
+      <span class="height-button-arrow">&#8592;</span>
+      <span class="height-button-label">Left</span>
+    </button>
+    <div></div>
+    <button id="move-right-button" class="height-button" type="button" aria-label="Move right">
+      <span class="height-button-arrow">&#8594;</span>
+      <span class="height-button-label">Right</span>
+    </button>
+    <div></div>
+    <button id="move-backward-button" class="height-button" type="button" aria-label="Move backward">
+      <span class="height-button-arrow">&#8595;</span>
+      <span class="height-button-label">Back</span>
+    </button>
+    <div></div>
+  </div>
+  <div id="height-controls">
+    <button id="move-up-button" class="height-button" type="button" aria-label="Raise panel one meter">
+      <span class="height-button-arrow">&#8593;</span>
+      <span class="height-button-label">Up +1 m</span>
+    </button>
+    <button id="move-down-button" class="height-button" type="button" aria-label="Lower panel one meter">
+      <span class="height-button-arrow">&#8595;</span>
+      <span class="height-button-label">Down -1 m</span>
+    </button>
+  </div>
+  <div id="hello-popup" role="dialog" aria-modal="true" aria-labelledby="hello-popup-title">
+    <div id="hello-popup-card">
+      <p id="hello-popup-title">Hola Mundo</p>
+      <button id="hello-popup-close" type="button">Cerrar</button>
+    </div>
+  </div>
+  <div id="device-rotation-readout" aria-live="polite"></div>
+
+  <script>
+    const SCENE_CONFIG_PATH = "scene-config.json";
+    const launchPanel = document.getElementById("launch-panel");
+    const statusText = document.getElementById("status-text");
+    const startButton = document.getElementById("start-button");
+    const exitButton = document.getElementById("exit-button");
+    const topRightBar = document.getElementById("top-right-bar");
+    const rotationControls = document.getElementById("rotation-controls");
+    const rotateClockwiseButton = document.getElementById("rotate-clockwise-button");
+    const rotateCounterclockwiseButton = document.getElementById("rotate-counterclockwise-button");
+    const translationControls = document.getElementById("translation-controls");
+    const moveForwardButton = document.getElementById("move-forward-button");
+    const moveBackwardButton = document.getElementById("move-backward-button");
+    const moveLeftButton = document.getElementById("move-left-button");
+    const moveRightButton = document.getElementById("move-right-button");
+    const heightControls = document.getElementById("height-controls");
+    const moveUpButton = document.getElementById("move-up-button");
+    const moveDownButton = document.getElementById("move-down-button");
+    const helloPopup = document.getElementById("hello-popup");
+    const helloPopupCloseButton = document.getElementById("hello-popup-close");
+    const deviceRotationReadout = document.getElementById("device-rotation-readout");
+    const ROTATION_INDICATOR_LENGTH_METERS = 0.8;
+    const ROTATION_INDICATOR_HEIGHT_METERS = 0.04;
+    const WORLD_UP_VECTOR = new THREE.Vector3(0, 1, 0);
+    let placedModelRef = null;
+    let heightStepMeters = 0;
+    let rotationStepRadians = 0;
+    let translationStepMeters = 0;
+    let sceneObjectsConfig = [];
+    let modelCacheRef = null;
+    let initialModelHeightOffsetRef = 0;
+    let initialPlacementPositionRef = null;
+    let initialRotationRadiansRef = 0;
+    let activeSceneRef = null;
+    let activeCameraRef = null;
+    let rotationIndicatorGroupRef = null;
+    let rotationReferenceDirectionRef = null;
+    let rotationReferenceLineRef = null;
+    let rotationCurrentLineRef = null;
+    let deviceRelativeDegreesRef = 0;
+    let deviceForwardDirectionRef = new THREE.Vector3(0, 0, -1);
+
+    function updateStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function showHelloPopup() {
+      helloPopup.classList.add("is-visible");
+    }
+
+    function hideHelloPopup() {
+      helloPopup.classList.remove("is-visible");
+    }
+
+    helloPopupCloseButton.addEventListener("click", hideHelloPopup);
+
+    function showDeviceRotationReadout() {
+      deviceRotationReadout.classList.add("is-visible");
+    }
+
+    function hideDeviceRotationReadout() {
+      deviceRotationReadout.classList.remove("is-visible");
+    }
+
+    function updateDeviceRotationReadout(relativeDegrees) {
+      deviceRotationReadout.textContent = `Referencia fija: 0.0°\nGiro celular: ${relativeDegrees.toFixed(1)}°`;
+    }
+
+    function createRotationIndicatorLine(colorHex) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -ROTATION_INDICATOR_LENGTH_METERS)
+      ]);
+      const material = new THREE.LineBasicMaterial({
+        color: colorHex,
+        transparent: true,
+        opacity: 0.95
+      });
+
+      return new THREE.Line(geometry, material);
+    }
+
+    function updateRotationIndicatorLine(line, direction) {
+      if (!line) {
+        return;
+      }
+
+      const positions = line.geometry.attributes.position.array;
+      positions[0] = 0;
+      positions[1] = 0;
+      positions[2] = 0;
+      positions[3] = direction.x * ROTATION_INDICATOR_LENGTH_METERS;
+      positions[4] = 0;
+      positions[5] = direction.z * ROTATION_INDICATOR_LENGTH_METERS;
+      line.geometry.attributes.position.needsUpdate = true;
+      line.geometry.computeBoundingSphere();
+    }
+
+    function disposeRotationIndicatorLine(line) {
+      if (!line) {
+        return;
+      }
+
+      if (line.geometry) {
+        line.geometry.dispose();
+      }
+
+      if (line.material) {
+        line.material.dispose();
+      }
+    }
+
+    function resetDeviceRotationIndicator() {
+      hideDeviceRotationReadout();
+
+      if (rotationIndicatorGroupRef && activeSceneRef) {
+        activeSceneRef.remove(rotationIndicatorGroupRef);
+      }
+
+      disposeRotationIndicatorLine(rotationReferenceLineRef);
+      disposeRotationIndicatorLine(rotationCurrentLineRef);
+      rotationIndicatorGroupRef = null;
+      rotationReferenceDirectionRef = null;
+      rotationReferenceLineRef = null;
+      rotationCurrentLineRef = null;
+      deviceRelativeDegreesRef = 0;
+      deviceForwardDirectionRef = new THREE.Vector3(0, 0, -1);
+    }
+
+    function getHorizontalDirection(vector, fallbackDirection) {
+      const horizontalDirection = vector.clone();
+      horizontalDirection.y = 0;
+
+      if (horizontalDirection.lengthSq() < 1e-6) {
+        return fallbackDirection.clone();
+      }
+
+      return horizontalDirection.normalize();
+    }
+
+    function getCameraHorizontalDirection(cameraObject, fallbackDirection) {
+      const cameraForward = new THREE.Vector3();
+      cameraObject.getWorldDirection(cameraForward);
+      return getHorizontalDirection(cameraForward, fallbackDirection);
+    }
+
+    function getHeadingDegrees(direction) {
+      return THREE.MathUtils.radToDeg(Math.atan2(direction.x, -direction.z));
+    }
+
+    function normalizeSignedDegrees(angleDegrees) {
+      return ((angleDegrees + 180) % 360 + 360) % 360 - 180;
+    }
+
+    function initializeDeviceRotationIndicator(cameraObject, anchorPosition) {
+      if (!activeSceneRef) {
+        return;
+      }
+
+      resetDeviceRotationIndicator();
+
+      const fallbackDirection = getCameraHorizontalDirection(cameraObject, new THREE.Vector3(0, 0, -1));
+      const cameraPosition = new THREE.Vector3();
+      cameraObject.getWorldPosition(cameraPosition);
+      const anchorReferenceVector = anchorPosition.clone().sub(cameraPosition);
+      const referenceDirection = getHorizontalDirection(anchorReferenceVector, fallbackDirection);
+      const indicatorGroup = new THREE.Group();
+
+      indicatorGroup.position.copy(anchorPosition);
+      indicatorGroup.position.y += ROTATION_INDICATOR_HEIGHT_METERS;
+
+      rotationReferenceLineRef = createRotationIndicatorLine(0xffcf4d);
+      rotationCurrentLineRef = createRotationIndicatorLine(0x45f3ff);
+      updateRotationIndicatorLine(rotationReferenceLineRef, referenceDirection);
+      updateRotationIndicatorLine(rotationCurrentLineRef, referenceDirection);
+
+      indicatorGroup.add(rotationReferenceLineRef);
+      indicatorGroup.add(rotationCurrentLineRef);
+      activeSceneRef.add(indicatorGroup);
+
+      rotationIndicatorGroupRef = indicatorGroup;
+      rotationReferenceDirectionRef = referenceDirection.clone();
+      deviceRelativeDegreesRef = 0;
+      deviceForwardDirectionRef = referenceDirection.clone();
+      showDeviceRotationReadout();
+      updateDeviceRotationReadout(0);
+    }
+
+    function updateDeviceRotationIndicator(cameraObject) {
+      if (!cameraObject) {
+        return null;
+      }
+
+      const fallbackDirection = rotationReferenceDirectionRef || deviceForwardDirectionRef || new THREE.Vector3(0, 0, -1);
+      const currentDirection = getCameraHorizontalDirection(cameraObject, fallbackDirection);
+      deviceForwardDirectionRef = currentDirection.clone();
+
+      if (!rotationReferenceDirectionRef || !rotationCurrentLineRef) {
+        return currentDirection;
+      }
+
+      const relativeDegrees = normalizeSignedDegrees(
+        getHeadingDegrees(currentDirection) - getHeadingDegrees(rotationReferenceDirectionRef)
+      );
+
+      deviceRelativeDegreesRef = relativeDegrees;
+      updateRotationIndicatorLine(rotationCurrentLineRef, currentDirection);
+      updateDeviceRotationReadout(relativeDegrees);
+      return currentDirection;
+    }
+
+    function getDeviceMovementForwardDirection() {
+      return getHorizontalDirection(
+        deviceForwardDirectionRef,
+        rotationReferenceDirectionRef || new THREE.Vector3(0, 0, -1)
+      );
+    }
+
+    function getUnitDirectionFromHeadingDegrees(headingDegrees) {
+      const headingRadians = THREE.MathUtils.degToRad(headingDegrees);
+      return new THREE.Vector3(
+        Math.sin(headingRadians),
+        0,
+        -Math.cos(headingRadians)
+      );
+    }
+
+    function refreshDeviceHeadingForPad() {
+      const currentDirection =
+        updateDeviceRotationIndicator(activeCameraRef) ||
+        getDeviceMovementForwardDirection();
+      const headingDegrees = getHeadingDegrees(currentDirection);
+
+      return {
+        headingDegrees,
+        forwardDirection: getUnitDirectionFromHeadingDegrees(headingDegrees)
+      };
+    }
+
+    function updatePlacedModelHeight(deltaY) {
+      if (!placedModelRef) {
+        return;
+      }
+
+      placedModelRef.position.y += deltaY;
+      updateStatus(`Panel height: ${placedModelRef.position.y.toFixed(2)} m`);
+    }
+
+    function setPlacedModelRotation(rotationRadians) {
+      if (!placedModelRef) {
+        return;
+      }
+
+      placedModelRef.rotation.set(0, rotationRadians, 0);
+      const rotationDegrees = THREE.MathUtils.radToDeg(placedModelRef.rotation.y);
+      updateStatus(`Set rotation: ${rotationDegrees.toFixed(1)} degrees`);
+    }
+
+    function updatePlacedModelRotation(deltaRadians) {
+      if (!placedModelRef) {
+        return;
+      }
+
+      setPlacedModelRotation(placedModelRef.rotation.y + deltaRadians);
+    }
+
+    function updatePlacedModelTranslation(localDirection, distanceMeters, forwardDirectionOverride) {
+      if (!placedModelRef) {
+        return;
+      }
+
+      const deviceForward = getHorizontalDirection(
+        forwardDirectionOverride || getDeviceMovementForwardDirection(),
+        getDeviceMovementForwardDirection()
+      );
+      const deviceRight = new THREE.Vector3().crossVectors(deviceForward, WORLD_UP_VECTOR).normalize();
+      const movement = new THREE.Vector3()
+        .addScaledVector(deviceRight, localDirection.x)
+        .addScaledVector(deviceForward, -localDirection.z);
+      movement.y = 0;
+
+      if (movement.lengthSq() === 0) {
+        return;
+      }
+
+      movement.normalize().multiplyScalar(distanceMeters);
+      placedModelRef.position.add(movement);
+      const movementOrigin = initialPlacementPositionRef || placedModelRef.position;
+      const deltaX = placedModelRef.position.x - movementOrigin.x;
+      const deltaZ = placedModelRef.position.z - movementOrigin.z;
+      const radialDistanceMeters = Math.hypot(deltaX, deltaZ);
+      updateStatus(`Distancia radial desde origen: ${radialDistanceMeters.toFixed(2)} m`);
+    }
+
+    function disposeMaterial(material) {
+      if (!material) {
+        return;
+      }
+
+      if (Array.isArray(material)) {
+        material.forEach(disposeMaterial);
+        return;
+      }
+
+      material.dispose();
+    }
+
+    function disposeObject3D(root) {
+      root.traverse((child) => {
+        if (!child.isMesh) {
+          return;
+        }
+
+        if (child.geometry) {
+          child.geometry.dispose();
+        }
+
+        disposeMaterial(child.material);
+      });
+    }
+
+    function getScaledDimensions(baseDimensions) {
+      if (!baseDimensions) {
+        return null;
+      }
+
+      return {
+        width: baseDimensions.width,
+        height: baseDimensions.height,
+        length: baseDimensions.length
+      };
+    }
+
+    function getScaledPosition(basePosition) {
+      return {
+        x: basePosition.x,
+        y: basePosition.y,
+        z: basePosition.z
+      };
+    }
+
+    function rebuildPlacedSceneFromConfig() {
+      if (!placedModelRef || !modelCacheRef || sceneObjectsConfig.length === 0) {
+        return;
+      }
+
+      while (placedModelRef.children.length > 0) {
+        const child = placedModelRef.children[0];
+        placedModelRef.remove(child);
+        disposeObject3D(child);
+      }
+
+      sceneObjectsConfig.forEach((sceneObject) => {
+        const sourceModel = modelCacheRef.get(sceneObject.modelPath);
+        const preparedObject = prepareModel(
+          sourceModel,
+          getScaledDimensions(sceneObject.dimensions),
+          sceneObject.alpha,
+          sceneObject.hexColor
+        );
+        const scaledPosition = getScaledPosition(sceneObject.position);
+        preparedObject.position.x += scaledPosition.x;
+        preparedObject.position.y += initialModelHeightOffsetRef + scaledPosition.y;
+        preparedObject.position.z += scaledPosition.z;
+        placedModelRef.add(preparedObject);
+      });
+    }
+
+    moveUpButton.addEventListener("click", () => {
+      updatePlacedModelHeight(heightStepMeters);
+    });
+
+    moveDownButton.addEventListener("click", () => {
+      updatePlacedModelHeight(-heightStepMeters);
+    });
+
+    rotateClockwiseButton.addEventListener("click", () => {
+      updatePlacedModelRotation(-rotationStepRadians);
+    });
+
+    rotateCounterclockwiseButton.addEventListener("click", () => {
+      updatePlacedModelRotation(rotationStepRadians);
+    });
+
+    moveForwardButton.addEventListener("click", () => {
+      const { forwardDirection } = refreshDeviceHeadingForPad();
+      updatePlacedModelTranslation(new THREE.Vector3(0, 0, -1), translationStepMeters, forwardDirection);
+    });
+
+    moveBackwardButton.addEventListener("click", () => {
+      const { forwardDirection } = refreshDeviceHeadingForPad();
+      updatePlacedModelTranslation(new THREE.Vector3(0, 0, 1), translationStepMeters, forwardDirection);
+    });
+
+    moveLeftButton.addEventListener("click", () => {
+      const { forwardDirection } = refreshDeviceHeadingForPad();
+      updatePlacedModelTranslation(new THREE.Vector3(-1, 0, 0), translationStepMeters, forwardDirection);
+    });
+
+    moveRightButton.addEventListener("click", () => {
+      const { forwardDirection } = refreshDeviceHeadingForPad();
+      updatePlacedModelTranslation(new THREE.Vector3(1, 0, 0), translationStepMeters, forwardDirection);
+    });
+
+    function loadGLB(loader, url) {
+      return new Promise((resolve, reject) => {
+        loader.load(url, resolve, undefined, reject);
+      });
+    }
+
+    async function loadSceneConfig(url) {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Could not load JSON configuration: ${response.status}`);
+      }
+
+      return response.json();
+    }
+
+    function applyAlphaToMaterial(material, alphaPercent) {
+      if (!material) {
+        return;
+      }
+
+      if (Array.isArray(material)) {
+        material.forEach((entry) => applyAlphaToMaterial(entry, alphaPercent));
+        return;
+      }
+
+      const opacity = THREE.MathUtils.clamp(alphaPercent / 100, 0, 1);
+      material.transparent = opacity < 1;
+      material.opacity = opacity;
+      material.depthWrite = opacity >= 1;
+      material.needsUpdate = true;
+    }
+
+    function cloneMaterialSet(material) {
+      if (!material) {
+        return material;
+      }
+
+      if (Array.isArray(material)) {
+        return material.map((entry) => cloneMaterialSet(entry));
+      }
+
+      return material.clone();
+    }
+
+    function createForcedColorMaterial(material, hexColor) {
+      if (!material) {
+        return material;
+      }
+
+      if (Array.isArray(material)) {
+        return material.map((entry) => createForcedColorMaterial(entry, hexColor));
+      }
+
+      const forcedMaterial = new THREE.MeshBasicMaterial({
+        color: hexColor,
+        side: material.side !== undefined ? material.side : THREE.FrontSide,
+        transparent: Boolean(material.transparent),
+        opacity: typeof material.opacity === "number" ? material.opacity : 1
+      });
+
+      if ("name" in material) {
+        forcedMaterial.name = material.name;
+      }
+
+      if ("alphaTest" in material) {
+        forcedMaterial.alphaTest = material.alphaTest;
+      }
+
+      if ("depthTest" in material) {
+        forcedMaterial.depthTest = material.depthTest;
+      }
+
+      if ("depthWrite" in material) {
+        forcedMaterial.depthWrite = material.depthWrite;
+      }
+
+      if ("skinning" in material) {
+        forcedMaterial.skinning = Boolean(material.skinning);
+      }
+
+      if ("morphTargets" in material) {
+        forcedMaterial.morphTargets = Boolean(material.morphTargets);
+      }
+
+      if ("morphNormals" in material) {
+        forcedMaterial.morphNormals = Boolean(material.morphNormals);
+      }
+
+      forcedMaterial.needsUpdate = true;
+      return forcedMaterial;
+    }
+
+    function prepareModel(modelRoot, dimensions, alphaPercent, hexColor) {
+      const container = new THREE.Group();
+      const workingModel = modelRoot.clone(true);
+
+      workingModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = false;
+          child.receiveShadow = false;
+
+          if (child.material) {
+            child.material = hexColor
+              ? createForcedColorMaterial(child.material, hexColor)
+              : cloneMaterialSet(child.material);
+            applyAlphaToMaterial(child.material, alphaPercent);
+          }
+        }
+      });
+
+      const bounds = new THREE.Box3().setFromObject(workingModel);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const safeSize = {
+        x: size.x || 1,
+        y: size.y || 1,
+        z: size.z || 1
+      };
+
+      workingModel.position.sub(center);
+
+      if (dimensions) {
+        const scaleVector = new THREE.Vector3(
+          dimensions.width / safeSize.x,
+          dimensions.height / safeSize.y,
+          dimensions.length / safeSize.z
+        );
+
+        workingModel.scale.copy(scaleVector);
+        workingModel.position.y += dimensions.height * 0.5;
+      } else {
+        workingModel.position.y += size.y * 0.5;
+      }
+
+      container.add(workingModel);
+      return container;
+    }
+
+    function normalizeSceneObjects(sceneConfig) {
+      if (!Array.isArray(sceneConfig.objects) || sceneConfig.objects.length === 0) {
+        throw new Error("scene-config.json must include an objects array with at least one item.");
+      }
+
+      return sceneConfig.objects.map((objectConfig, index) => {
+        if (!objectConfig || !objectConfig.modelPath) {
+          throw new Error(`Object ${index + 1} does not contain a valid modelPath.`);
+        }
+
+        const parsedDimensions = {
+          width: Number(objectConfig.dimensions?.width),
+          height: Number(objectConfig.dimensions?.height),
+          length: Number(objectConfig.dimensions?.length)
+        };
+        const dimensions =
+          Number.isFinite(parsedDimensions.width) &&
+          Number.isFinite(parsedDimensions.height) &&
+          Number.isFinite(parsedDimensions.length)
+            ? parsedDimensions
+            : null;
+
+        const position = {
+          x: Number(objectConfig.position?.x),
+          y: Number(objectConfig.position?.y),
+          z: Number(objectConfig.position?.z)
+        };
+        const alpha = Number(objectConfig.alpha);
+        const rawHexColor = typeof objectConfig.hexColor === "string" ? objectConfig.hexColor.trim() : "";
+        const hexColor =
+          /^#?[0-9a-fA-F]{6}$/.test(rawHexColor)
+            ? rawHexColor.startsWith("#")
+              ? rawHexColor
+              : `#${rawHexColor}`
+            : /^0x[0-9a-fA-F]{6}$/.test(rawHexColor)
+              ? `#${rawHexColor.slice(2)}`
+              : null;
+
+        if (
+          !Number.isFinite(position.x) ||
+          !Number.isFinite(position.y) ||
+          !Number.isFinite(position.z)
+        ) {
+          throw new Error(`Object ${index + 1} must include valid position.x, position.y, and position.z.`);
+        }
+
+        if (!Number.isFinite(alpha)) {
+          throw new Error(`Object ${index + 1} must include a valid alpha value.`);
+        }
+
+        return {
+          id: objectConfig.id || `object-${index + 1}`,
+          modelPath: objectConfig.modelPath,
+          dimensions,
+          position,
+          alpha,
+          hexColor
+        };
+      });
+    }
+
+    startButton.addEventListener("click", async () => {
+      if (!navigator.xr) {
+        updateStatus("This device does not support WebXR.");
+        return;
+      }
+
+      startButton.disabled = true;
+      updateStatus("Initializing AR...");
+
+      let session;
+      let canvas;
+
+      try {
+        canvas = document.createElement("canvas");
+        document.body.appendChild(canvas);
+
+        const gl = canvas.getContext("webgl", { xrCompatible: true });
+        const scene = new THREE.Scene();
+        activeSceneRef = scene;
+
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+          canvas,
+          context: gl,
+          preserveDrawingBuffer: true
+        });
+        renderer.autoClear = false;
+
+        const camera = new THREE.PerspectiveCamera();
+        camera.matrixAutoUpdate = false;
+        activeCameraRef = camera;
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.9);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(2, 4, 3);
+        scene.add(dirLight);
+
+        updateStatus("Requesting AR session...");
+        session = await navigator.xr.requestSession("immersive-ar", {
+          requiredFeatures: ["hit-test"],
+          optionalFeatures: ["dom-overlay"],
+          domOverlay: { root: document.body }
+        });
+
+        topRightBar.style.display = "flex";
+        exitButton.style.display = "block";
+        launchPanel.style.display = "none";
+        rotationControls.style.display = "block";
+        translationControls.style.display = "grid";
+        heightControls.style.display = "block";
+        exitButton.onclick = () => session.end();
+
+        session.addEventListener("end", () => {
+          hideHelloPopup();
+          resetDeviceRotationIndicator();
+          updateStatus("AR session ended.");
+          topRightBar.style.display = "none";
+          exitButton.style.display = "none";
+          rotationControls.style.display = "none";
+          translationControls.style.display = "none";
+          heightControls.style.display = "none";
+          startButton.disabled = false;
+          launchPanel.style.display = "flex";
+          placedModelRef = null;
+          sceneObjectsConfig = [];
+          modelCacheRef = null;
+          initialPlacementPositionRef = null;
+          initialRotationRadiansRef = 0;
+          activeSceneRef = null;
+          activeCameraRef = null;
+
+          if (canvas && canvas.parentNode) {
+            canvas.parentNode.removeChild(canvas);
+          }
+        });
+
+        session.updateRenderState({
+          baseLayer: new XRWebGLLayer(session, gl)
+        });
+
+        const referenceSpace = await session.requestReferenceSpace("local");
+        const viewerSpace = await session.requestReferenceSpace("viewer");
+        const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+
+        const reticle = new THREE.Mesh(
+          new THREE.RingGeometry(0.08, 0.1, 32),
+          new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+        );
+        reticle.rotation.x = -Math.PI / 2;
+        reticle.visible = false;
+        scene.add(reticle);
+
+        updateStatus("Loading scene configuration...");
+        const sceneConfig = await loadSceneConfig(SCENE_CONFIG_PATH);
+        const initialModelHeightOffsetMeters = Number(sceneConfig.initialModelHeightOffsetMeters);
+        const initialRotationDegreesRaw = sceneConfig.initialRotation ?? sceneConfig["Initial Rotation"] ?? 0;
+        const initialRotationRadians = THREE.MathUtils.degToRad(Number(initialRotationDegreesRaw));
+        heightStepMeters = Number(sceneConfig.heightStepMeters);
+        rotationStepRadians = THREE.MathUtils.degToRad(Number(sceneConfig.rotationStepDegrees));
+        translationStepMeters = Number(sceneConfig.translationStepMeters);
+        const sceneObjects = normalizeSceneObjects(sceneConfig);
+
+        if (!Number.isFinite(initialModelHeightOffsetMeters)) {
+          throw new Error("initialModelHeightOffsetMeters is invalid in scene-config.json.");
+        }
+
+        if (!Number.isFinite(heightStepMeters)) {
+          throw new Error("heightStepMeters is invalid in scene-config.json.");
+        }
+
+        if (!Number.isFinite(initialRotationRadians)) {
+          throw new Error("initialRotation is invalid in scene-config.json.");
+        }
+
+        if (!Number.isFinite(rotationStepRadians)) {
+          throw new Error("rotationStepDegrees is invalid in scene-config.json.");
+        }
+
+        if (!Number.isFinite(translationStepMeters)) {
+          throw new Error("translationStepMeters is invalid in scene-config.json.");
+        }
+
+        updateStatus("Loading 3D models...");
+        const loader = new THREE.GLTFLoader();
+        const modelCache = new Map();
+
+        for (const sceneObject of sceneObjects) {
+          if (!modelCache.has(sceneObject.modelPath)) {
+            const gltf = await loadGLB(loader, sceneObject.modelPath);
+            modelCache.set(sceneObject.modelPath, gltf.scene);
+          }
+        }
+
+        sceneObjectsConfig = sceneObjects;
+        modelCacheRef = modelCache;
+        initialModelHeightOffsetRef = initialModelHeightOffsetMeters;
+        initialRotationRadiansRef = initialRotationRadians;
+
+        let isPlaced = false;
+
+        session.addEventListener("select", () => {
+          if (isPlaced || !reticle.visible) {
+            return;
+          }
+
+          const placedModel = new THREE.Group();
+          placedModel.position.copy(reticle.position);
+          const placementAnchor = reticle.position.clone();
+
+          scene.add(placedModel);
+          placedModelRef = placedModel;
+          initialPlacementPositionRef = placedModel.position.clone();
+          setPlacedModelRotation(initialRotationRadiansRef);
+          rebuildPlacedSceneFromConfig();
+          initializeDeviceRotationIndicator(camera, placementAnchor);
+          // showHelloPopup();
+          updatePlacedModelTranslation(new THREE.Vector3(0, 0, -1), 25);
+          // updatePlacedModelRotation(THREE.MathUtils.degToRad(Number(-133.0)))
+
+
+
+          isPlaced = true;
+          reticle.visible = false;
+          updateStatus(`Scene placed with ${sceneObjects.length} objects.`);
+        });
+
+        renderer.xr.setSession(session);
+        updateStatus("Find a surface and tap the screen to place the panel.");
+
+        const onXRFrame = (time, frame) => {
+          session.requestAnimationFrame(onXRFrame);
+
+          const pose = frame.getViewerPose(referenceSpace);
+          if (!pose) {
+            return;
+          }
+
+          const glLayer = session.renderState.baseLayer;
+          gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+
+          const view = pose.views[0];
+          const viewport = glLayer.getViewport(view);
+          renderer.setSize(viewport.width, viewport.height);
+
+          camera.matrix.fromArray(view.transform.matrix);
+          camera.projectionMatrix.fromArray(view.projectionMatrix);
+          camera.updateMatrixWorld(true);
+
+          if (!isPlaced) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+            if (hitTestResults.length > 0) {
+              const hitPose = hitTestResults[0].getPose(referenceSpace);
+
+              if (hitPose) {
+                reticle.visible = true;
+                reticle.position.set(
+                  hitPose.transform.position.x,
+                  hitPose.transform.position.y,
+                  hitPose.transform.position.z
+                );
+                reticle.quaternion.set(
+                  hitPose.transform.orientation.x,
+                  hitPose.transform.orientation.y,
+                  hitPose.transform.orientation.z,
+                  hitPose.transform.orientation.w
+                );
+              }
+            } else {
+              reticle.visible = false;
+            }
+          } else {
+            updateDeviceRotationIndicator(camera);
+          }
+
+          renderer.render(scene, camera);
+        };
+
+        session.requestAnimationFrame(onXRFrame);
+      } catch (error) {
+        console.error(error);
+        hideHelloPopup();
+        resetDeviceRotationIndicator();
+        updateStatus("Could not start the AR experience.");
+        startButton.disabled = false;
+        launchPanel.style.display = "flex";
+        topRightBar.style.display = "none";
+        exitButton.style.display = "none";
+        rotationControls.style.display = "none";
+        translationControls.style.display = "none";
+        heightControls.style.display = "none";
+        placedModelRef = null;
+        sceneObjectsConfig = [];
+        modelCacheRef = null;
+        initialPlacementPositionRef = null;
+        initialRotationRadiansRef = 0;
+        activeSceneRef = null;
+        activeCameraRef = null;
+
+        if (canvas && canvas.parentNode) {
+          canvas.parentNode.removeChild(canvas);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

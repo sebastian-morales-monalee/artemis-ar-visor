@@ -1,0 +1,22 @@
+{
+  "initialModelHeightOffsetMeters": 0,
+  "heightStepMeters": 1,
+  "initialRotation": -133.0,
+  "rotationStepDegrees": 3.75,
+  "translationStepMeters": 1,
+  
+  "objects": [
+    
+    {
+      "id": "roof-1",
+      "modelPath": "panels_dsm_red.glb",
+      "alpha": 60,
+      
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ]
+}
