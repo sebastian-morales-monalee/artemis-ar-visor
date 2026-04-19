@@ -10,7 +10,7 @@
     {
       "id": "roof-1",
       "modelPath": "panels_jaydeep.glb",
-      "alpha": 60,
+      "alpha": 30,
       
       "position": {
         "x": 0,
